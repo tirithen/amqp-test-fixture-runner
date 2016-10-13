@@ -1,0 +1,32 @@
+{
+  "name": "amqp-test-fixture-runner",
+  "version": "0.1.0",
+  "description": "A system that connects to an ActiveMQ instance and runs test fixtures",
+  "main": "test/index.js",
+  "scripts": {
+    "test": "mocha",
+    "start": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tirithen/amqp-test-fixture-runner.git"
+  },
+  "keywords": [
+    "test",
+    "testing",
+    "micro services",
+    "amqp",
+    "activemq"
+  ],
+  "author": "Fredrik Söderström <fredrik.soderstrom@mojlighetsministeriet.se>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/tirithen/amqp-test-fixture-runner/issues"
+  },
+  "homepage": "https://github.com/tirithen/amqp-test-fixture-runner#readme",
+  "dependencies": {
+    "amqp10": "^3.2.5",
+    "mocha": "^3.1.2",
+    "walker": "^1.0.7"
+  }
+}
