@@ -4,6 +4,7 @@ const assert = require('assert');
 const path = require('path');
 const AMQP = require('amqp10');
 const walker = require('walker');
+const equal = require('deep-equal');
 
 const AMQP_URL = process.env.AMQP_URL || 'amqp://localhost';
 const FIXTURE_DIRECTORIES = (process.env.FIXTURE_DIRECTORIES || __dirname)
@@ -102,38 +103,59 @@ describe('Loading test fixtures from given directories', () => {
   getFixtureTree(FIXTURE_DIRECTORIES).then((fixtureGroups) => {
     Object.keys(fixtureGroups).forEach((fixtureGroupName) => {
       const fixtureGroup = fixtureGroups[fixtureGroupName];
-      let groupReciever;
-      let groupSender;
+      const defaultSendOn = fixtureGroup.sendOn;
+      const defaultRecieveOn = fixtureGroup.recieveOn;
+      const defaultTimeout = fixtureGroup.timeout;
 
       describe(`Fixtures in ${fixtureGroupName}`, () => {
-        before((done) => {
-          Promise.all([
-            client.createReceiver(fixtureGroup.send.channel),
-            client.createSender(fixtureGroup.recieve.channel)
-          ]).then((links) => {
-            groupReciever = links[0];
-            groupReciever.setMaxListeners(fixtureGroup.recieve.messages.length);
-            groupSender = links[1];
-            done();
-          }, done);
-        });
+        if (!Array.isArray(fixtureGroup.tests)) {
+          fixtureGroup.tests = [fixtureGroup.tests];
+        }
 
-        // TODO: figure out a way of looking up nice it descriptions from the fixture data
-        fixtureGroup.recieve.messages.forEach((messageToSend, index) => {
-          it('Should recieve expected message on time', (done) => {
-            const id = `${fixtureGroupName}.${index}`;
+        fixtureGroup.tests.forEach((testFixture, index) => {
+          const name = testFixture.name || index;
+          const sendOn = testFixture.sendOn || defaultSendOn;
+          const recieveOn = testFixture.recieveOn || defaultRecieveOn;
+          const timeout = testFixture.timeout || defaultTimeout;
 
-            groupReciever.on('message', (messageRecieved) => {
-              const expectedMessage = fixtureGroup.recieve.messages[index];
-              if (messageRecieved.replyTo === id) {
-                assert.deepEqual(messageRecieved, expectedMessage);
-                done();
-              }
-            });
+          if (!Array.isArray(testFixture.send)) {
+            testFixture.send = [testFixture.send];
+          }
 
-            messageToSend.id = id;
-            groupSender.send(messageToSend);
-          }).timeout(fixtureGroup.timeout);
+          if (!Array.isArray(testFixture.recieve)) {
+            testFixture.recieve = [testFixture.recieve];
+          }
+
+          it(`Should pass test ${name}`, (done) => {
+            Promise.all([
+              client.createSender(sendOn),
+              client.createReceiver(recieveOn)
+            ]).then((links) => {
+              const sender = links[0];
+              const reciever = links[1];
+
+              reciever.on('message', (recievedMessage) => {
+                assert.equal(testFixture.recieve > 1, true, 'Recieved to many messages');
+
+                const length = testFixture.recieve.length;
+                for (let recieveIndex = length; recieveIndex >= 0; recieveIndex -= 1) {
+                  const expectedMessage = testFixture.recieve[recieveIndex];
+
+                  if (equal(recievedMessage, expectedMessage)) {
+                    testFixture.recieve.splice(recieveIndex, 1);
+                  }
+
+                  if (testFixture.recieve.length === 0) {
+                    done();
+                  }
+                }
+              });
+
+              testFixture.send.forEach((messageToSend) => {
+                sender.send(messageToSend);
+              });
+            }, done);
+          }).timeout(timeout);
         });
       });
     });
