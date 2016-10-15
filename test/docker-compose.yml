@@ -1,0 +1,24 @@
+version: '2'
+
+services:
+
+  activemq:
+    image: webcenter/activemq:5.13.2
+    environment:
+      - ACTIVEMQ_NAME=activemq
+      - ACTIVEMQ_REMOVE_DEFAULT_ACCOUNT=true
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=evpf7D0IOCUtqRE5fewe
+      - ACTIVEMQ_WRITE_LOGIN=producer
+      - ACTIVEMQ_WRITE_PASSWORD=DYjpp4fbCQ8zpiDIoJwP
+      - ACTIVEMQ_READ_LOGIN=consumer
+      - ACTIVEMQ_READ_PASSWORD=pmh0c3qYL100O6Ne1IqI
+      - ACTIVEMQ_JMX_LOGIN=jmx
+      - ACTIVEMQ_JMX_PASSWORD=uCFGlWSHbcGP4XZVRBAV
+      - ACTIVEMQ_STATIC_TOPICS=ingredient.translated
+      - ACTIVEMQ_STATIC_QUEUES=ingredient.toTranslate
+      - ACTIVEMQ_MIN_MEMORY=1024
+      - ACTIVEMQ_MAX_MEMORY=4096
+      - ACTIVEMQ_ENABLED_SCHEDULER=true
+    ports:
+      - 5672:5672
