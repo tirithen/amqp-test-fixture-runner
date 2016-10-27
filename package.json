@@ -1,6 +1,6 @@
 {
   "name": "amqp-test-fixture-runner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A system that connects to an ActiveMQ instance and runs test fixtures",
   "main": "test/index.js",
   "scripts": {

@@ -14,17 +14,17 @@ See *test/ingredientTranslate.js* for an example of a fixture file.
 
 ## Usage
 
-  1. Add this package to your package.json dependencies:
+Add this package to your package.json dependencies:
 
     $ npm install --save-dev amqp-test-fixture-runner
 
-  2. Add the test command to scripts.test inside package.json:
+Add the test command to scripts.test inside package.json:
 
     "scripts": {
       "test": "docker-compose -f ./node_modules/amqp-test-fixture-runner/test/docker-compose.yml up -d && AMQP_URL=amqp://producer:DYjpp4fbCQ8zpiDIoJwP@localhost FIXTURE_DIRECTORIES=./test ./node_modules/.bin/mocha --timeout 60000 && docker-compose  -f ./node_modules/amqp-test-fixture-runner/test/docker-compose.yml down"
     }
 
-  3. Add one or more test fixture files (see *./node_modules/amqp-test-fixture-runner/test/ingredientTranslate.js* as an other example) to your projects ./test directory with the following syntax:
+Add one or more test fixture files (see *./node_modules/amqp-test-fixture-runner/test/ingredientTranslate.js* as an other example) to your projects ./test directory with the following syntax:
 
     const add = {
       sendOn: 'add',
@@ -50,8 +50,7 @@ See *test/ingredientTranslate.js* for an example of a fixture file.
       add
     };
 
-
-  4. Run your tests with:
+Run your tests with:
 
     $ npm test
 
