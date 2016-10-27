@@ -22,3 +22,4 @@ services:
       - ACTIVEMQ_ENABLED_SCHEDULER=true
     ports:
       - 5672:5672
+      - 8161:8161

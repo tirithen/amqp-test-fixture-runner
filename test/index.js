@@ -1,0 +1,2 @@
+require('./fakeTranslateService');
+require('../index');

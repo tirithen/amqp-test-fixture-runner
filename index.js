@@ -18,7 +18,6 @@ function getFixtures(filename) {
   if (filename.match(jsFileRegExp)) {
     try {
       const module = require(path.resolve(process.cwd(), filename));
-
       if (module.amqpFixtures) {
         delete module.amqpFixtures;
 
@@ -30,11 +29,9 @@ function getFixtures(filename) {
           }
 
           if (
-            !fixtureGroup.send.channel ||
-            !fixtureGroup.recieve.channel ||
-            !Array.isArray(fixtureGroup.send.messages) ||
-            !Array.isArray(fixtureGroup.recieve.messages) ||
-            fixtureGroup.send.messages.length !== fixtureGroup.recieve.messages.length
+            !fixtureGroup.sendOn ||
+            !fixtureGroup.recieveOn ||
+            !Array.isArray(fixtureGroup.tests)
           ) {
             throw new Error('Invalid fixture group structure');
           }
@@ -45,6 +42,10 @@ function getFixtures(filename) {
 
       throw new Error('Invalid fixture module');
     } catch (error) {}
+  }
+
+  if (result) {
+    console.info(`    Found module: ${filename}`);
   }
 
   return result;
@@ -58,7 +59,7 @@ function directoryShouldBeFiltered(directory) {
 function getFixtureTree(directories) {
   return new Promise((resolve, reject) => {
     Promise.all(directories.map((directory) => {
-      console.info(`Scanning ${directory} for fixture files`);
+      console.info(`  Scanning ${directory} for fixture files`);
       return new Promise((fixtureGroupResolve, fixtureGroupReject) => {
         const fixtureGroups = [];
         walker(directory)
@@ -107,7 +108,7 @@ describe('Loading test fixtures from given directories', () => {
       const defaultRecieveOn = fixtureGroup.recieveOn;
       const defaultTimeout = fixtureGroup.timeout;
 
-      describe(`Fixtures in ${fixtureGroupName}`, () => {
+      describe(`Tests for fixtures in ${fixtureGroupName}`, () => {
         if (!Array.isArray(fixtureGroup.tests)) {
           fixtureGroup.tests = [fixtureGroup.tests];
         }
@@ -126,7 +127,7 @@ describe('Loading test fixtures from given directories', () => {
             testFixture.recieve = [testFixture.recieve];
           }
 
-          it(`Should pass test ${name}`, (done) => {
+          it(`Should pass test with fixture group ${name}`, (done) => {
             Promise.all([
               client.createSender(sendOn),
               client.createReceiver(recieveOn)
@@ -135,18 +136,17 @@ describe('Loading test fixtures from given directories', () => {
               const reciever = links[1];
 
               reciever.on('message', (recievedMessage) => {
-                assert.equal(testFixture.recieve > 1, true, 'Recieved to many messages');
-
                 const length = testFixture.recieve.length;
-                for (let recieveIndex = length; recieveIndex >= 0; recieveIndex -= 1) {
+                for (let recieveIndex = length - 1; recieveIndex >= 0; recieveIndex -= 1) {
                   const expectedMessage = testFixture.recieve[recieveIndex];
 
-                  if (equal(recievedMessage, expectedMessage)) {
+                  if (equal(recievedMessage.body, expectedMessage)) {
+                    assert.equal(length > 0, true, 'Recieved to many messages');
                     testFixture.recieve.splice(recieveIndex, 1);
                   }
 
                   if (testFixture.recieve.length === 0) {
-                    done();
+                    reciever.detach().then(() => { done(); }, done);
                   }
                 }
               });

@@ -14,25 +14,25 @@ client.connect(AMQP_URL).then(() => {
     reciever.on('message', (message) => {
       const response = {};
 
-      if (message.text === 'vetemjöl' && message.toLanguage === 'en-us') {
+      if (message.body.text === 'vetemjöl' && message.body.toLanguage === 'en-us') {
         response.text = 'weat flour';
-      } else if (message.text === 'strösocker' && message.toLanguage === 'en-us') {
+      } else if (message.body.text === 'strösocker' && message.body.toLanguage === 'en-us') {
         response.text = 'sugar';
       }
 
-      if (message.id) {
-        response.replyTo = message.id;
+      if (message.body.id) {
+        response.replyTo = message.body.id;
       }
 
-      if (message.environment) {
-        response.environment = message.environment;
+      if (message.body.environment) {
+        response.environment = message.body.environment;
       }
 
-      if (message.toLanguage) {
-        response.language = message.toLanguage;
+      if (message.body.toLanguage) {
+        response.language = message.body.toLanguage;
       }
 
       sender.send(response);
     });
-  });
+  }, error => console.error(error));
 }, error => console.error(error));
