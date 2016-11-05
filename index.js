@@ -11,6 +11,14 @@ const FIXTURE_DIRECTORIES = (process.env.FIXTURE_DIRECTORIES || __dirname)
                               .trim().split(/\s*[,;\s]\s*/);
 const DEFAULT_TIMEOUT = process.env.DEFAULT_TIMEOUT || 1000;
 
+function markSkipProperties(recieved, expected) {
+  Object.keys(expected).forEach((key) => {
+    if (expected[key] === 'SKIP') {
+      recieved[key] = 'SKIP';
+    }
+  });
+}
+
 const jsFileRegExp = /\.js$/i;
 function getFixtures(filename) {
   let result;
@@ -29,7 +37,6 @@ function getFixtures(filename) {
           }
 
           if (
-            !fixtureGroup.sendOn ||
             !fixtureGroup.recieveOn ||
             !Array.isArray(fixtureGroup.tests)
           ) {
@@ -119,7 +126,7 @@ describe('Loading test fixtures from given directories', () => {
           const recieveOn = testFixture.recieveOn || defaultRecieveOn;
           const timeout = testFixture.timeout || defaultTimeout;
 
-          if (!Array.isArray(testFixture.send)) {
+          if (testFixture.send && !Array.isArray(testFixture.send)) {
             testFixture.send = [testFixture.send];
           }
 
@@ -129,7 +136,7 @@ describe('Loading test fixtures from given directories', () => {
 
           it(`Should pass test with fixture group ${name}`, (done) => {
             Promise.all([
-              client.createSender(sendOn),
+              sendOn ? client.createSender(sendOn) : Promise.resolve(),
               client.createReceiver(recieveOn)
             ]).then((links) => {
               const sender = links[0];
@@ -140,20 +147,24 @@ describe('Loading test fixtures from given directories', () => {
                 for (let recieveIndex = length - 1; recieveIndex >= 0; recieveIndex -= 1) {
                   const expectedMessage = testFixture.recieve[recieveIndex];
 
-                  if (equal(recievedMessage.body, expectedMessage)) {
-                    assert.equal(length > 0, true, 'Recieved to many messages');
-                    testFixture.recieve.splice(recieveIndex, 1);
-                  }
+                  markSkipProperties(recievedMessage.body, expectedMessage);
+
+                  assert.deepEqual(recievedMessage.body, expectedMessage);
+                  assert.equal(length > 0, true, 'Recieved to many messages');
+                  testFixture.recieve.splice(recieveIndex, 1);
 
                   if (testFixture.recieve.length === 0) {
                     reciever.detach().then(() => { done(); }, done);
+                    break;
                   }
                 }
               });
 
-              testFixture.send.forEach((messageToSend) => {
-                sender.send(messageToSend);
-              });
+              if (testFixture.send && sender) {
+                testFixture.send.forEach((messageToSend) => {
+                  sender.send(messageToSend);
+                });
+              }
             }, done);
           }).timeout(timeout);
         });

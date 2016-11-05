@@ -1,10 +1,10 @@
 {
   "name": "amqp-test-fixture-runner",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A system that connects to an ActiveMQ instance and runs test fixtures",
   "main": "test/index.js",
   "scripts": {
-    "test": "docker-compose -f test/docker-compose.yml up -d && AMQP_URL=amqp://producer:DYjpp4fbCQ8zpiDIoJwP@localhost FIXTURE_DIRECTORIES=./test node_modules/.bin/mocha --timeout 60000 && docker-compose  -f test/docker-compose.yml down",
+    "test": "docker-compose -f test/docker-compose.yml up -d && AMQP_URL=amqp://producer:DYjpp4fbCQ8zpiDIoJwP@localhost FIXTURE_DIRECTORIES=./test node_modules/.bin/mocha --timeout 60000 && docker-compose -f test/docker-compose.yml down",
     "start": "npm test"
   },
   "repository": {
