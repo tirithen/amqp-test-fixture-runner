@@ -11,13 +11,6 @@ const FIXTURE_DIRECTORIES = (process.env.FIXTURE_DIRECTORIES || __dirname)
                               .trim().split(/\s*[,;\s]\s*/);
 const DEFAULT_TIMEOUT = process.env.DEFAULT_TIMEOUT || 1000;
 
-function markSkipProperties(recieved, expected) {
-  Object.keys(expected).forEach((key) => {
-    if (expected[key] === 'SKIP') {
-      recieved[key] = 'SKIP';
-    }
-  });
-}
 
 const jsFileRegExp = /\.js$/i;
 function getFixtures(filename) {
@@ -98,7 +91,6 @@ function getFixtureTree(directories) {
   });
 }
 
-
 describe('Loading test fixtures from given directories', () => {
   const client = new AMQP.Client(AMQP.Policy.ActiveMQ);
 
@@ -112,6 +104,7 @@ describe('Loading test fixtures from given directories', () => {
     assert.equal(true, true);
   });
 
+
   getFixtureTree(FIXTURE_DIRECTORIES).then((fixtureGroups) => {
     Object.keys(fixtureGroups).forEach((fixtureGroupName) => {
       const fixtureGroup = fixtureGroups[fixtureGroupName];
@@ -119,72 +112,43 @@ describe('Loading test fixtures from given directories', () => {
       const defaultRecieveOn = fixtureGroup.recieveOn;
       const defaultTimeout = fixtureGroup.timeout;
 
-      describe(`Tests for fixtures in ${fixtureGroupName}`, () => {
-        if (!Array.isArray(fixtureGroup.tests)) {
-          fixtureGroup.tests = [ fixtureGroup.tests ];
-        }
+      console.log(fixtureGroupName, defaultSendOn, defaultRecieveOn, defaultTimeout);
 
-        fixtureGroup.tests.forEach((testFixture, index) => {
-          const name = testFixture.name || index;
-          const sendOn = testFixture.sendOn || defaultSendOn;
-          const recieveOn = testFixture.recieveOn || defaultRecieveOn;
-          const timeout = testFixture.timeout || defaultTimeout;
+      fixtureGroup.tests.forEach((test) => {
+        const sendOn = test.sendOn || defaultSendOn;
+        const recieveOn = test.recieveOn || defaultRecieveOn;
+        const timeout = test.timeout || defaultTimeout;
 
-          if (testFixture.send && !Array.isArray(testFixture.send)) {
-            testFixture.send = [ testFixture.send ];
-          }
+        it(`Should pass test with fixture group ${name}`, (done) => { // eslint-disable-line max-nested-callbacks
+          Promise.all([
+            client.createSender(sendOn),
+            client.createReceiver(recieveOn)
+          ]).then((links) => { // eslint-disable-line max-nested-callbacks
+            const sender = links[0];
+            const reciever = links[1];
 
-          if (!Array.isArray(testFixture.recieve)) {
-            testFixture.recieve = [ testFixture.recieve ];
-          }
+            reciever.on('message', (message) => { // eslint-disable-line max-nested-callbacks
+              if (message.body.id === test.recieve.replyTo) {
+                assert.deepEqual(message.body, test.recieve);
 
-          it(`Should pass test with fixture group ${name}`, (done) => { // eslint-disable-line max-nested-callbacks
-            Promise.all([
-              sendOn ? client.createSender(sendOn) : Promise.resolve(),
-              client.createReceiver(recieveOn)
-            ]).then((links) => { // eslint-disable-line max-nested-callbacks
-              const sender = links[0];
-              const reciever = links[1];
-
-              reciever.on('message', (recievedMessage) => { // eslint-disable-line max-nested-callbacks
-                const length = testFixture.recieve.length;
-                for (let recieveIndex = length - 1; recieveIndex >= 0; recieveIndex -= 1) {
-                  const expectedMessage = testFixture.recieve[recieveIndex];
-
-                  markSkipProperties(recievedMessage.body, expectedMessage);
-
-                  assert.deepEqual(recievedMessage.body, expectedMessage);
-                  assert.equal(length > 0, true, 'Recieved to many messages');
-                  testFixture.recieve.splice(recieveIndex, 1);
-
-                  if (testFixture.recieve.length === 0) {
-                    reciever.detach().then(() => { // eslint-disable-line max-nested-callbacks
-                      done();
-                    }, done);
-                    break;
-                  }
-                }
-              });
-
-              if (testFixture.send && sender) {
-                testFixture.send.forEach((messageToSend) => { // eslint-disable-line max-nested-callbacks
-                  if (!messageToSend.id) {
-                    const id = uuid.v4();
-                    messageToSend.id = id;
-                    testFixture.recieve.forEach((expectedMessage) => { // eslint-disable-line max-nested-callbacks
-                      expectedMessage.replyTo = id;
-                    });
-                  }
-
-                  sender.send(messageToSend);
-                });
+                reciever.detach().then(() => { // eslint-disable-line max-nested-callbacks
+                  done();
+                }, done);
               }
-            }, done);
-          }).timeout(timeout);
-        });
+            });
+
+            if (!test.send.id) {
+              test.send.id = uuid.v4();
+            }
+
+            if (!test.recieve.replyTo) {
+              test.recieve.replyTo = test.send.id;
+            }
+
+            sender.send(test.send);
+          }, (subscriptionError) => console.error(subscriptionError)); // eslint-disable-line max-nested-callbacks
+        }).timeout(timeout);
       });
     });
-  }, (fixtureTreeError) => {
-    throw fixtureTreeError;
   });
 });
