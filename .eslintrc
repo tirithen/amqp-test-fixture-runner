@@ -1,0 +1,35 @@
+{
+  "extends": [ "strict", "strict/browser" ],
+  "plugins": [ "html", "json" ],
+  "rules": {
+    "id-match": [ "error", "^([A-Za-z]+[A-Za-z0-9]*|[A-Z][A-Z_0-9]*[A-Z0-9])$", { "onlyDeclarations": true }],
+    "id-length": [ 2, {
+        "min": 3,
+        "max": 50,
+        "exceptions": [ "i", "x", "y", "id", "d", "dx", "dy", "d3", "is", "fs" ],
+        "properties": "never"
+      }
+    ],
+    "no-underscore-dangle": [
+      "error", {
+        "allow": [ "_id", "__v", "_readdir", "_mark" ]
+      }
+    ],
+    "no-invalid-this": 0,
+    "no-warning-comments": 0,
+    "filenames/match-regex": [2, "^[a-zA-Z]+$", true],
+    "filenames/match-exported": 0,
+    "comma-dangle": ["error", "never"],
+    "no-process-env": 0,
+    "no-sync": 0,
+    "init-declarations": 0,
+    "no-magic-numbers": 0,
+    "template-curly-spacing": ["error", "never"],
+    // The callback-return has a good purpose but right now has to many side effects, disable for now
+    "callback-return": 0,
+    "no-undefined": 0,
+    "no-console": 0,
+    "global-require": 0,
+    "consistent-this": 0
+  },
+}

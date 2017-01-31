@@ -18,6 +18,12 @@ client.connect(AMQP_URL).then(() => {
         response.text = 'weat flour';
       } else if (message.body.text === 'strösocker' && message.body.toLanguage === 'en-us') {
         response.text = 'sugar';
+      } else if (message.body.text === 'vatten' && message.body.toLanguage === 'en-us') {
+        response.text = 'water';
+      } else if (message.body.text === 'äpple' && message.body.toLanguage === 'en-us') {
+        response.text = 'apple';
+      } else if (message.body.text === 'apelsin' && message.body.toLanguage === 'en-us') {
+        response.text = 'orange';
       }
 
       if (message.body.id) {
@@ -32,7 +38,12 @@ client.connect(AMQP_URL).then(() => {
         response.language = message.body.toLanguage;
       }
 
+      const delay = (Math.random() > 0.5 ? 100 : 0) + (Math.random() * 20);
+      setTimeout(() => {
+        sender.send(response);
+      }, delay);
+
       sender.send(response);
     });
-  }, error => console.error(error));
-}, error => console.error(error));
+  }, (subscriptionError) => console.error(subscriptionError));
+}, (connectionError) => console.error(connectionError));

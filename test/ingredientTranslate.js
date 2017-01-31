@@ -1,7 +1,7 @@
 const ingredientTranslate = {
   sendOn: 'ingredient.toTranslate',
   recieveOn: 'topic://ingredient.translated',
-  timeout: 500,
+  timeout: 1000,
   tests: [
     {
       send: [
@@ -29,6 +29,70 @@ const ingredientTranslate = {
           replyTo: 2,
           environment: 'test',
           text: 'sugar',
+          language: 'en-us'
+        }
+      ]
+    },
+    {
+      send: {
+        id: 3,
+        environment: 'test',
+        text: 'äpple',
+        toLanguage: 'en-us'
+      },
+      recieve: [
+        {
+          replyTo: 3,
+          environment: 'test',
+          text: 'apple',
+          language: 'en-us'
+        }
+      ]
+    },
+    {
+      send: {
+        id: 4,
+        environment: 'test',
+        text: 'vatten',
+        toLanguage: 'en-us'
+      },
+      recieve: [
+        {
+          replyTo: 4,
+          environment: 'test',
+          text: 'water',
+          language: 'en-us'
+        }
+      ]
+    },
+    {
+      send: {
+        id: 5,
+        environment: 'test',
+        text: 'äpple',
+        toLanguage: 'en-us'
+      },
+      recieve: [
+        {
+          replyTo: 5,
+          environment: 'test',
+          text: 'apple',
+          language: 'en-us'
+        }
+      ]
+    },
+    {
+      send: {
+        id: 6,
+        environment: 'test',
+        text: 'apelsin',
+        toLanguage: 'en-us'
+      },
+      recieve: [
+        {
+          replyTo: 6,
+          environment: 'test',
+          text: 'orange',
           language: 'en-us'
         }
       ]

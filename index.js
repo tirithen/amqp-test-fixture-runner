@@ -4,7 +4,6 @@ const assert = require('assert');
 const path = require('path');
 const AMQP = require('amqp10');
 const walker = require('walker');
-const equal = require('deep-equal');
 
 const AMQP_URL = process.env.AMQP_URL || 'amqp://localhost';
 const FIXTURE_DIRECTORIES = (process.env.FIXTURE_DIRECTORIES || __dirname)
@@ -27,7 +26,7 @@ function getFixtures(filename) {
     try {
       const module = require(path.resolve(process.cwd(), filename));
       if (module.amqpFixtures) {
-        delete module.amqpFixtures;
+        Reflect.deleteProperty(module, 'amqpFixtures');
 
         Object.keys(module).forEach((key) => {
           const fixtureGroup = module[key];
@@ -48,7 +47,9 @@ function getFixtures(filename) {
       }
 
       throw new Error('Invalid fixture module');
-    } catch (error) {}
+    } catch (lostError) {
+      // We do not handle this error
+    }
   }
 
   if (result) {
@@ -101,7 +102,9 @@ describe('Loading test fixtures from given directories', () => {
   const client = new AMQP.Client(AMQP.Policy.ActiveMQ);
 
   before((done) => {
-    client.connect(AMQP_URL).then(() => { done(); }, done);
+    client.connect(AMQP_URL).then(() => {
+      done();
+    }, done);
   });
 
   it('A test to make the dynamic ones load', () => {
@@ -117,7 +120,7 @@ describe('Loading test fixtures from given directories', () => {
 
       describe(`Tests for fixtures in ${fixtureGroupName}`, () => {
         if (!Array.isArray(fixtureGroup.tests)) {
-          fixtureGroup.tests = [fixtureGroup.tests];
+          fixtureGroup.tests = [ fixtureGroup.tests ];
         }
 
         fixtureGroup.tests.forEach((testFixture, index) => {
@@ -127,22 +130,22 @@ describe('Loading test fixtures from given directories', () => {
           const timeout = testFixture.timeout || defaultTimeout;
 
           if (testFixture.send && !Array.isArray(testFixture.send)) {
-            testFixture.send = [testFixture.send];
+            testFixture.send = [ testFixture.send ];
           }
 
           if (!Array.isArray(testFixture.recieve)) {
-            testFixture.recieve = [testFixture.recieve];
+            testFixture.recieve = [ testFixture.recieve ];
           }
 
-          it(`Should pass test with fixture group ${name}`, (done) => {
+          it(`Should pass test with fixture group ${name}`, (done) => { // eslint-disable-line max-nested-callbacks
             Promise.all([
               sendOn ? client.createSender(sendOn) : Promise.resolve(),
               client.createReceiver(recieveOn)
-            ]).then((links) => {
+            ]).then((links) => { // eslint-disable-line max-nested-callbacks
               const sender = links[0];
               const reciever = links[1];
 
-              reciever.on('message', (recievedMessage) => {
+              reciever.on('message', (recievedMessage) => { // eslint-disable-line max-nested-callbacks
                 const length = testFixture.recieve.length;
                 for (let recieveIndex = length - 1; recieveIndex >= 0; recieveIndex -= 1) {
                   const expectedMessage = testFixture.recieve[recieveIndex];
@@ -154,14 +157,16 @@ describe('Loading test fixtures from given directories', () => {
                   testFixture.recieve.splice(recieveIndex, 1);
 
                   if (testFixture.recieve.length === 0) {
-                    reciever.detach().then(() => { done(); }, done);
+                    reciever.detach().then(() => { // eslint-disable-line max-nested-callbacks
+                      done();
+                    }, done);
                     break;
                   }
                 }
               });
 
               if (testFixture.send && sender) {
-                testFixture.send.forEach((messageToSend) => {
+                testFixture.send.forEach((messageToSend) => { // eslint-disable-line max-nested-callbacks
                   sender.send(messageToSend);
                 });
               }
@@ -170,7 +175,7 @@ describe('Loading test fixtures from given directories', () => {
         });
       });
     });
-  }, (error) => {
-    throw error;
+  }, (fixtureTreeError) => {
+    throw fixtureTreeError;
   });
 });
