@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const path = require('path');
+const uuid = require('uuid');
 const AMQP = require('amqp10');
 const walker = require('walker');
 
@@ -167,6 +168,14 @@ describe('Loading test fixtures from given directories', () => {
 
               if (testFixture.send && sender) {
                 testFixture.send.forEach((messageToSend) => { // eslint-disable-line max-nested-callbacks
+                  if (!messageToSend.id) {
+                    const id = uuid.v4();
+                    messageToSend.id = id;
+                    testFixture.recieve.forEach((expectedMessage) => { // eslint-disable-line max-nested-callbacks
+                      expectedMessage.replyTo = id;
+                    });
+                  }
+
                   sender.send(messageToSend);
                 });
               }
